@@ -1,0 +1,32 @@
+version: '3.9'
+
+services:
+  mariadb:
+    container_name: mariadb
+    image: mariadb:latest
+    restart: unless-stopped
+    ports:
+      - 3306:3306
+    volumes:
+      - mariadb:/var/lib/mysql
+    env_file:
+      - keycloak.env
+
+  keycloak:
+
+    container_name: keycloak
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: keycloak
+    command: ["--auto-build"]
+    ports:
+      - 8443:8443
+    restart: unless-stopped
+    env_file:
+      - keycloak.env
+    depends_on:
+      - mariadb
+
+volumes:
+  mariadb:

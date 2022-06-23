@@ -12,7 +12,7 @@
             <column name="CITY" type="VARCHAR(36)"/>
             <column name="COUNTRY" type="VARCHAR(36)"/>
             <column name="ZIP_CODE" type="VARCHAR(36)"/>
-            <column name="ADDRESS_LINE" type="VARCHAR(36)"/>
+            <column name="ADDRESS_LINE" type="VARCHAR(64)"/>
         </createTable>
 
         <addPrimaryKey tableName="ADDRESS_ENTITY" columnNames="ID"/>

@@ -3,7 +3,7 @@ package org.example;
 import lombok.extern.slf4j.Slf4j;
 import org.example.mapper.AddressMapper;
 import org.example.model.AddressEntity;
-import org.example.model.AddressDto;
+import org.example.model.AddressInputDto;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -27,6 +27,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
+import java.util.List;
 
 @Slf4j
 public class UserResourceProvider implements RealmResourceProvider
@@ -49,49 +50,41 @@ public class UserResourceProvider implements RealmResourceProvider
 
     }
 
-    @Path("bulk/{ids}")
+    @Path("bulk")
     @POST
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
-    public Response postUsers(@PathParam("ids") String ids, AddressDto addressDto) {
+    public Response updateUserAddress(List<AddressInputDto> addresses) {
         checkAuth();
-
-        String[] idList = ids.split(",");
 
         RealmModel realmModel = session.getContext().getRealm();
         EntityManager entityManager = session.getProvider(JpaConnectionProvider.class).getEntityManager();
 
-        AddressEntity addressEntity = findAddressEntity(realmModel, entityManager, addressDto);
-        if (addressEntity == null) {
-            addressEntity = AddressMapper.INSTANCE.addressDtoToAddressEntity(addressDto);
-            addressEntity.setId(KeycloakModelUtils.generateId());
-            addressEntity.setRealmId(realmModel.getId());
+        for (AddressInputDto address: addresses) {
+            AddressEntity addressEntity = findAddressEntity(realmModel, entityManager, address);
+            if (addressEntity == null) {
+                addressEntity = AddressMapper.INSTANCE.addressDtoToAddressEntity(address);
+                addressEntity.setId(KeycloakModelUtils.generateId());
+                addressEntity.setRealmId(realmModel.getId());
 
-            entityManager.persist(addressEntity);
-            log.info("New address created with id:{}", addressEntity.getId());
-        }
-        else {
-            log.info("Address already exists with id:{}", addressEntity.getId());
-        }
-
-        for (String id: idList)
-        {
-            UserEntity userEntity = entityManager.find(UserEntity.class, id);
-            if (userEntity != null)
-            {
-                addressEntity.getUsers().add(userEntity);
-                log.info("User with id:{}, registered to address with id: {}", id, addressEntity.getId());
+                entityManager.persist(addressEntity);
+                log.info("New address created with id:{}", addressEntity.getId());
             }
-            else
-            {
-                log.info("No user found with id:{}", id);
-            }
-        }
+            else { log.info("Address already exists with id:{}", addressEntity.getId()); }
 
-        entityManager.flush();
-        if (session.getTransactionManager().isActive())
-        {
-            session.getTransactionManager().commit();
+            for (String id : address.getUserIds()) {
+                UserEntity userEntity = entityManager.find(UserEntity.class, id);
+                if (userEntity != null) {
+                    if (!addressEntity.getUsers().contains(userEntity)) {
+                        addressEntity.getUsers().add(userEntity);
+                        log.info("Registering user with id:{} to address with id: {}", id, addressEntity.getId());
+                    }
+                    else { log.info("User with id:{}, already registered to address with id: {}", id, addressEntity.getId()); }
+                }
+                else { log.info("No user found with id:{}", id); }
+            }
+
+            entityManager.flush();
         }
 
         return Response.noContent().build();
@@ -133,13 +126,13 @@ public class UserResourceProvider implements RealmResourceProvider
         }
     }
 
-    private AddressEntity findAddressEntity(RealmModel realmModel, EntityManager entityManager, AddressDto addressDto) {
+    private AddressEntity findAddressEntity(RealmModel realmModel, EntityManager entityManager, AddressInputDto address) {
         TypedQuery<AddressEntity> query = entityManager.createNamedQuery("findAddress", AddressEntity.class);
         query.setParameter("realmId", realmModel.getId());
-        query.setParameter("city", addressDto.getCity());
-        query.setParameter("country", addressDto.getCountry());
-        query.setParameter("zipCode", addressDto.getZipCode());
-        query.setParameter("addressLine", addressDto.getAddressLine());
+        query.setParameter("city", address.getCity());
+        query.setParameter("country", address.getCountry());
+        query.setParameter("zipCode", address.getZipCode());
+        query.setParameter("addressLine", address.getAddressLine());
 
         try
         {

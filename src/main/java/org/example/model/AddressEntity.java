@@ -68,4 +68,18 @@ public class AddressEntity implements Serializable
     {
         return Objects.hash(id);
     }
+
+    @Override
+    public String toString()
+    {
+        return "AddressEntity{" +
+                "id='" + id + '\'' +
+                ", realmId='" + realmId + '\'' +
+                ", users=" + users +
+                ", city='" + city + '\'' +
+                ", country='" + country + '\'' +
+                ", zipCode='" + zipCode + '\'' +
+                ", addressLine='" + addressLine + '\'' +
+                '}';
+    }
 }

@@ -1,6 +1,7 @@
 package org.example;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.mapper.AddressMapper;
 import org.example.model.AddressEntity;
 import org.example.model.AddressDto;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -62,12 +63,7 @@ public class UserResourceProvider implements RealmResourceProvider
 
         AddressEntity addressEntity = findAddressEntity(realmModel, entityManager, addressDto);
         if (addressEntity == null) {
-            //addressEntity = AddressMapper.INSTANCE.addressDtoToAddressEntity(addressDto);
-            addressEntity = new AddressEntity();
-            addressEntity.setAddressLine(addressDto.getAddressLine());
-            addressEntity.setCountry(addressDto.getCountry());
-            addressEntity.setCity(addressDto.getCity());
-            addressEntity.setZipCode(addressDto.getZipCode());
+            addressEntity = AddressMapper.INSTANCE.addressDtoToAddressEntity(addressDto);
             addressEntity.setId(KeycloakModelUtils.generateId());
             addressEntity.setRealmId(realmModel.getId());
 
